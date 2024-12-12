@@ -1,0 +1,40 @@
+version: "2.1"
+services:
+  nginx-lb:
+    image: nginx:latest
+    ports:
+      - 4567:4567
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - yelb-appserver
+
+  yelb-ui:
+    image: mreferre/yelb-ui:0.10
+    depends_on:
+      - nginx-lb
+    ports:
+      - 8080:80
+    environment:
+      - UI_ENV=test
+      # Update to use the Nginx load balancer
+      - YELB_APPSERVER_ENDPOINT=http://nginx-lb:4567
+
+  yelb-appserver:
+    image: mreferre/yelb-appserver:0.7
+    depends_on:
+      - redis-server
+      - yelb-db
+    # No port mapping for appserver
+    environment:
+      - RACK_ENV=test 
+
+  redis-server:
+    image: redis:4.0.2
+    ports:
+      - 6379:6379
+
+  yelb-db:
+    image: mreferre/yelb-db:0.6
+    ports:
+      - 5432:5432
